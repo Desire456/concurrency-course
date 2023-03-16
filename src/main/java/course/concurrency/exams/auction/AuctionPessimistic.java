@@ -13,8 +13,9 @@ public class AuctionPessimistic implements Auction {
 
     public boolean propose(Bid bid) {
         boolean needUpdate;
-        var outdated = latestBid;
+        Bid outdated;
         synchronized (lock) {
+            outdated = latestBid;
             needUpdate = bid.getPrice() > latestBid.getPrice();
             if (needUpdate) {
                 latestBid = bid;

@@ -15,12 +15,18 @@ public class AuctionOptimistic implements Auction {
     );
 
     public boolean propose(Bid bid) {
-        var prev = latestBid.get();
-        if (bid == latestBid.updateAndGet(val -> bid.getPrice() > val.getPrice() ? bid : val)) {
+        Bid prev;
+        do {
+            prev = latestBid.get();
+            if (bid.getPrice() <= prev.getPrice()) {
+                break;
+            }
+        } while (!latestBid.compareAndSet(prev, bid));
+
+        if (bid == latestBid.get()) {
             notifier.sendOutdatedMessage(prev);
             return true;
         }
-
         return false;
     }
 

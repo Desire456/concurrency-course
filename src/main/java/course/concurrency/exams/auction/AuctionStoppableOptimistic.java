@@ -10,25 +10,22 @@ public class AuctionStoppableOptimistic implements AuctionStoppable {
         this.notifier = notifier;
     }
 
-    private final AtomicReference<Bid> latestBid = new AtomicReference<>();
+    private final AtomicReference<Bid> latestBid = new AtomicReference<>(
+            new Bid(-1L, -1L, -1L)
+    );
     private volatile boolean stop = false;
 
     public boolean propose(Bid bid) {
-        if (!stop) {
-            var prev = latestBid.get();
-            if (prev == null) {
-                latestBid.set(bid);
-                prev = latestBid.get();
+        Bid prev;
+        do {
+            prev = latestBid.get();
+            if (stop || bid.getPrice() <= prev.getPrice()) {
+                return false;
             }
+        } while (!stop && !latestBid.compareAndSet(prev, bid));
 
-            if (bid.getPrice() > prev.getPrice() && latestBid.compareAndSet(prev, bid)) {
-                notifier.sendOutdatedMessage(prev);
-                return true;
-            }
-
-            return false;
-        }
-        return false;
+        notifier.sendOutdatedMessage(prev);
+        return true;
     }
 
     public Bid getLatestBid() {

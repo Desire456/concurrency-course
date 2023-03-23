@@ -27,12 +27,12 @@ public class AuctionStoppableTests {
 
         executor = Executors.newFixedThreadPool(poolSize);
         priceQueue = new ArrayBlockingQueue<>(bidCount);
-        for (long i = 0; i < bidCount/3; i++) {
-            priceQueue.offer(i-1);
+        for (long i = 0; i < bidCount / 3; i++) {
+            priceQueue.offer(i - 1);
             priceQueue.offer(i);
-            priceQueue.offer(i+1);
+            priceQueue.offer(i + 1);
         }
-        latestPrice = bidCount/3;
+        latestPrice = bidCount / 3;
     }
 
     @AfterEach
@@ -64,7 +64,8 @@ public class AuctionStoppableTests {
             executor.submit(() -> {
                 try {
                     latch.await();
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
 
                 for (int it = 0; it < iterations; it++) {
                     long value = priceQueue.poll();
@@ -81,7 +82,7 @@ public class AuctionStoppableTests {
         long end = System.currentTimeMillis();
 
         assertEquals(latestPrice, auction.getLatestBid().getPrice());
-        stat.addData(tag,end - start);
+        stat.addData(tag, end - start);
     }
 
     @Test
@@ -105,7 +106,8 @@ public class AuctionStoppableTests {
             executor.submit(() -> {
                 try {
                     latch.await();
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
 
                 for (int it = 0; it < iterations; it++) {
                     long value = priceQueue.poll();

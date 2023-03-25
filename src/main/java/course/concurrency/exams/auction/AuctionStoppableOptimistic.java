@@ -1,43 +1,72 @@
 package course.concurrency.exams.auction;
 
+import org.apache.commons.math3.util.Pair;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AuctionStoppableOptimistic implements AuctionStoppable {
 
+    //    private final AtomicReference<Bid> latestBid = new AtomicReference<>(
+//            new Bid(-1L, -1L, -1L)
+//    );
+    private final AtomicReference<Pair<Bid, Boolean>> latestBid = new AtomicReference<>(
+            new Pair<>(
+                    new Bid(-1L, -1L, -1L),
+                    false
+            )
+    );
     private final Notifier notifier;
 
     public AuctionStoppableOptimistic(Notifier notifier) {
         this.notifier = notifier;
     }
 
-    private final AtomicReference<Bid> latestBid = new AtomicReference<>(
-            new Bid(-1L, -1L, -1L)
-    );
-    private volatile boolean stop = false;
-
     public boolean propose(Bid bid) {
-        Bid prev;
+        var newBid = new Pair<>(bid, false);
+        Pair<Bid, Boolean> prev;
         do {
             prev = latestBid.get();
-            if (stop || bid.getPrice() <= prev.getPrice()) {
+            if (prev.getValue() || newBid.getKey().getPrice() <= prev.getKey().getPrice()) {
                 return false;
             }
-        } while (!stop && !latestBid.compareAndSet(prev, bid));
+        } while (!latestBid.compareAndSet(prev, newBid));
 
-        if (stop) {
-            return false;
-        }
-
-        notifier.sendOutdatedMessage(prev);
+        notifier.sendOutdatedMessage(prev.getKey());
         return true;
     }
 
     public Bid getLatestBid() {
-        return latestBid.get();
+        return latestBid.get().getKey();
     }
 
     public Bid stopAuction() {
-        stop = true;
-        return latestBid.get();
+        latestBid.set(new Pair<>(getLatestBid(), true));
+        return getLatestBid();
     }
+
+//    public boolean propose(Bid bid) {
+//        Bid prev;
+//        do {
+//            prev = latestBid.get();
+//            if (stop || bid.getPrice() <= prev.getPrice()) {
+//                return false;
+//            }
+//        } while (!stop && !latestBid.compareAndSet(prev, bid));
+//
+//        if (stop) {
+//            return false;
+//        }
+//
+//        notifier.sendOutdatedMessage(prev);
+//        return true;
+//    }
+//
+//    public Bid getLatestBid() {
+//        return latestBid.get();
+//    }
+//
+//    public Bid stopAuction() {
+//        stop = true;
+//        return latestBid.get();
+//    }
 }

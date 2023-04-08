@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("DataFlowIssue")
 public class OrderService {
 
     private final Map<Long, Order> currentOrders = new ConcurrentHashMap<>();
@@ -21,16 +22,16 @@ public class OrderService {
     }
 
     public void updatePaymentInfo(long orderId, PaymentInfo paymentInfo) {
-        currentOrders.computeIfPresent(orderId, (k, v) -> v.withPaymentInfo(paymentInfo));
-        deliverIfNecessary(currentOrders.get(orderId));
+        var order = currentOrders.computeIfPresent(orderId, (k, v) -> v.withPaymentInfo(paymentInfo));
+        deliverIfNecessary(order);
     }
 
     public void setPacked(long orderId) {
-        currentOrders.computeIfPresent(orderId, (k, v) -> v.withPacked(true));
-        deliverIfNecessary(currentOrders.get(orderId));
+        var order = currentOrders.computeIfPresent(orderId, (k, v) -> v.withPacked(true));
+        deliverIfNecessary(order);
     }
 
-    private synchronized void deliverIfNecessary(Order order) {
+    private void deliverIfNecessary(Order order) {
         if (order.checkStatus()) {
             currentOrders.computeIfPresent(order.getId(), (k, v) -> v.withStatus(Order.Status.DELIVERED));
         }

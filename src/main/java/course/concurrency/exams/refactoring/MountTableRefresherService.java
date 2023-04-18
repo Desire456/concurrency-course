@@ -131,18 +131,23 @@ public class MountTableRefresherService {
                     }
                 })
                 .collect(Collectors.toList());
+        if (results.stream().anyMatch(RefreshResult::isTimedOut)) {
+            log("Not all router admins updated their cache");
+        }
         logResult(results);
     }
 
     private CompletableFuture<RefreshResult> mapToCompletableFuture(MountTableRefresher task) {
         return CompletableFuture.supplyAsync(task, mountTableRefresherExecutor)
                 .completeOnTimeout(
-                        new RefreshResult(task.getAdminAddress(), false),
+                        new RefreshResult(task.getAdminAddress(), false, true),
                         cacheUpdateTimeout,
                         TimeUnit.MILLISECONDS
                 )
                 .exceptionally(ex -> {
-                    System.out.println("Failed to refresh mount table");
+                    if (ex.getCause() instanceof InterruptedException) {
+                        log("Mount table cache refresher was interrupted.");
+                    }
                     return new RefreshResult(task.getAdminAddress(), false);
                 });
     }

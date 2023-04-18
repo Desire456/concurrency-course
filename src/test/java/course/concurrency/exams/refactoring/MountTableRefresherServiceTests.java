@@ -131,6 +131,33 @@ public class MountTableRefresherServiceTests {
     }
 
     @Test
+    @DisplayName("One task with interrupted exception")
+    public void interruptedExceptionInOneTask() {
+        var mockedService = spy(service);
+        List<String> addresses = List.of("123", "local6", "789", "local");
+
+
+        when(manager.refresh())
+                .thenReturn(true, true, true)
+                .thenAnswer(inv -> {
+                    throw new InterruptedException();
+                });
+        when(mountTableManagerFactory.create(Mockito.any())).thenReturn(manager);
+
+        List<Others.RouterState> states = addresses.stream()
+                .map(a -> new Others.RouterState(a)).collect(toList());
+        when(routerStore.getCachedRecords()).thenReturn(states);
+
+        // when
+        mockedService.refresh();
+
+        // then
+        verify(mockedService).log("Mount table cache refresher was interrupted.");
+        verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
+        verify(routerClientsCache, times(1)).invalidate(anyString());
+    }
+
+    @Test
     @DisplayName("One task exceeds timeout")
     public void oneTaskExceedTimeout() {
         var mockedService = spy(service);
@@ -155,6 +182,7 @@ public class MountTableRefresherServiceTests {
 
         // then
         verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
+        verify(mockedService).log("Not all router admins updated their cache");
         verify(routerClientsCache, times(1)).invalidate(anyString());
     }
 

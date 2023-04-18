@@ -49,11 +49,20 @@ public class MyBlockingQueue<T> {
                 isEmptyCondition.await();
             }
 
-            var value = tail.item;
-            tail.next = null;
+            var value = head.item;
+            head = head.next;
             size--;
             isFullCondition.signal();
             return value;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int getSize() {
+        lock.lock();
+        try {
+            return size;
         } finally {
             lock.unlock();
         }

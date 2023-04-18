@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Others {
 
     public static class LoadingCache<K, V> {
-        Map<K,V> map = new ConcurrentHashMap<>();
+        Map<K, V> map = new ConcurrentHashMap<>();
 
         public void add(K key, V value) {
             map.put(key, value);
@@ -20,7 +20,9 @@ public class Others {
             map.remove(address);
         }
 
-        public void cleanUp() { map.clear(); }
+        public void cleanUp() {
+            map.clear();
+        }
 
     }
 
@@ -52,12 +54,19 @@ public class Others {
     public static class MountTableManager {
 
         private String address;
+
         public MountTableManager(String address) {
             this.address = address;
         }
 
         public boolean refresh() {
             return ThreadLocalRandom.current().nextBoolean();
+        }
+    }
+
+    public static class MountTableManagerFactory {
+        public MountTableManager create(String address) {
+            return new MountTableManager(address);
         }
     }
 }

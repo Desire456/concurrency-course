@@ -123,27 +123,14 @@ public class MountTableRefresherService {
         CompletableFuture.allOf(tasks).join();
 
         var results = Arrays.stream(tasks)
-                .map(e -> {
-                    try {
-                        return (RefreshResult) e.get();
-                    } catch (InterruptedException | ExecutionException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                })
+                .map(e -> (RefreshResult) e.join())
                 .collect(Collectors.toList());
-        if (results.stream().anyMatch(RefreshResult::isTimedOut)) {
-            log("Not all router admins updated their cache");
-        }
         logResult(results);
     }
 
     private CompletableFuture<RefreshResult> mapToCompletableFuture(MountTableRefresher task) {
         return CompletableFuture.supplyAsync(task, mountTableRefresherExecutor)
-                .completeOnTimeout(
-                        new RefreshResult(task.getAdminAddress(), false, true),
-                        cacheUpdateTimeout,
-                        TimeUnit.MILLISECONDS
-                )
+                .orTimeout(cacheUpdateTimeout, TimeUnit.MILLISECONDS)
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof InterruptedException) {
                         log("Mount table cache refresher was interrupted.");
@@ -167,6 +154,9 @@ public class MountTableRefresherService {
                 // remove RouterClient from cache so that new client is created
                 removeFromCache(result.getAddress());
             }
+        }
+        if (failureCount > 0) {
+            log("Not all router admins updated their cache");
         }
         log(String.format(
                 "Mount table entries cache refresh successCount=%d,failureCount=%d",

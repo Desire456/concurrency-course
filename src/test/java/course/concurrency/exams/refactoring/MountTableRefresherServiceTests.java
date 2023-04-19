@@ -11,6 +11,7 @@ import org.mockito.Mockito;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
+import static org.hamcrest.collection.IsIn.in;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -82,7 +83,7 @@ public class MountTableRefresherServiceTests {
 
         // then
         verify(mockedService).log("Mount table entries cache refresh successCount=0,failureCount=4");
-        verify(routerClientsCache, times(4)).invalidate(anyString());
+        states.forEach(e -> verify(routerClientsCache).invalidate(e.getAdminAddress()));
     }
 
     @Test
@@ -102,8 +103,9 @@ public class MountTableRefresherServiceTests {
         mockedService.refresh();
 
         // then
+        var modifiedAddresses = states.stream().map(Others.RouterState::getAdminAddress).collect(toList());
         verify(mockedService).log("Mount table entries cache refresh successCount=2,failureCount=2");
-        verify(routerClientsCache, times(2)).invalidate(anyString());
+        verify(routerClientsCache, times(2)).invalidate(argThat(in(modifiedAddresses)));
     }
 
     @Test
@@ -126,8 +128,9 @@ public class MountTableRefresherServiceTests {
         mockedService.refresh();
 
         // then
+        var modifiedAddresses = states.stream().map(Others.RouterState::getAdminAddress).collect(toList());
         verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
-        verify(routerClientsCache, times(1)).invalidate(anyString());
+        verify(routerClientsCache).invalidate(argThat(in(modifiedAddresses)));
     }
 
     @Test
@@ -152,9 +155,10 @@ public class MountTableRefresherServiceTests {
         mockedService.refresh();
 
         // then
+        var modifiedAddresses = states.stream().map(Others.RouterState::getAdminAddress).collect(toList());
         verify(mockedService).log("Mount table cache refresher was interrupted.");
         verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
-        verify(routerClientsCache, times(1)).invalidate(anyString());
+        verify(routerClientsCache).invalidate(argThat(in(modifiedAddresses)));
     }
 
     @Test
@@ -181,9 +185,10 @@ public class MountTableRefresherServiceTests {
         mockedService.refresh();
 
         // then
+        var modifiedAddresses = states.stream().map(Others.RouterState::getAdminAddress).collect(toList());
         verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
         verify(mockedService).log("Not all router admins updated their cache");
-        verify(routerClientsCache, times(1)).invalidate(anyString());
+        verify(routerClientsCache).invalidate(argThat(in(modifiedAddresses)));
     }
 
 }

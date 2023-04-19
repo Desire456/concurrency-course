@@ -21,7 +21,7 @@ public class MyBlockingQueue<T> {
     public void enqueue(T value) throws InterruptedException {
         lock.lock();
         try {
-            if (size == capacity) {
+            while (size == capacity) {
                 isFullCondition.await();
             }
 
@@ -33,6 +33,7 @@ public class MyBlockingQueue<T> {
                 head.next = tail;
             } else {
                 tail.next = new Node<>(value);
+                tail = tail.next;
             }
 
             size++;
@@ -45,7 +46,7 @@ public class MyBlockingQueue<T> {
     public T dequeue() throws InterruptedException {
         lock.lock();
         try {
-            if (size == 0) {
+            while (size == 0) {
                 isEmptyCondition.await();
             }
 
@@ -59,7 +60,7 @@ public class MyBlockingQueue<T> {
         }
     }
 
-    public int getSize() {
+    int getSize() {
         lock.lock();
         try {
             return size;

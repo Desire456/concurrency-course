@@ -105,6 +105,8 @@ public class BlockingQueueTest {
         assertEquals(1, queue.dequeue());
         assertEquals(2, queue.dequeue());
         assertEquals(3, queue.dequeue());
+
+        assertEquals(0, queue.getSize());
     }
 
     @Test
@@ -156,6 +158,7 @@ public class BlockingQueueTest {
         int waitTimeInSec = 5;
         assertTrue(executorService.awaitTermination(waitTimeInSec, TimeUnit.SECONDS),
                 "Doesn't finished for " + waitTimeInSec + " seconds");
+        assertEquals(0, queue.getSize());
     }
 
     private static void awaitUntilThreadStateIs(Thread deqThread, Thread.State terminated) {
